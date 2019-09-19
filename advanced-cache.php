@@ -711,6 +711,13 @@ class Redis_Page_Cache {
 			$home,
 		), $expire );
 
+		write_log('CLEAR CACHE');
+		write_log(array(
+			sprintf( 'post:%d:%d', $blog_id, $post_id ),
+			sprintf( 'feed:%d', $blog_id ))
+		);
+
+
 		self::clear_cache_by_flag( array(
 			sprintf( 'post:%d:%d', $blog_id, $post_id ),
 			sprintf( 'feed:%d', $blog_id ),
