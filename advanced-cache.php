@@ -8,6 +8,45 @@
 
 if ( ! defined( 'ABSPATH' ) )
 	die();
+	
+if( empty( $_COOKIE['country'] )) {
+
+	if(!isset($_SERVER['GEOIP_COUNTRY_CODE'])) {
+
+		if ( defined('GEOIP_COUNTRY_CODE' ) ) {
+			$code = GEOIP_COUNTRY_CODE;
+		} else {
+			$code = 'SE';
+		}
+
+	} else {
+		$code = $_SERVER['GEOIP_COUNTRY_CODE'];
+	}
+
+	setcookie("country", $code, time()+(3600*24), "/",  $_SERVER['SERVER_NAME'] );
+
+	$_COOKIE['country'] = $code;
+}
+	if (!function_exists('do_not_cache')) {  
+	    function do_not_cache ()  {
+          if( strpos( $_SERVER['REQUEST_URI'], '/checkout' ) === 0 ||
+          	  strpos( $_SERVER['REQUEST_URI'], '/thank-you' ) === 0 ||
+           ) {
+            return true;
+          }
+	    }
+	}
+	if (!function_exists('write_log')) {
+	    function write_log ( $log )  {
+	        if ( true === WP_DEBUG ) {
+	            if ( is_array( $log ) || is_object( $log ) ) {
+	                error_log( print_r( $log, true ) );
+	            } else {
+	                error_log( $log );
+	            }
+	        }
+	    }
+	}
 
 class Redis_Page_Cache {
 	private static $redis;
@@ -16,14 +55,14 @@ class Redis_Page_Cache {
 	private static $redis_db = 0;
 	private static $redis_auth = '';
 
-	private static $ttl = 300;
+	private static $ttl = 600;
 	private static $max_ttl = 3600;
 	private static $unique = array();
 	private static $headers = array();
-	private static $ignore_cookies = array( 'wordpress_test_cookie' );
+	private static $ignore_cookies = array( 'wordpress_test_cookie', 'phpsessid', 'pll_language', 'esc_id', 'settings_newsletterdisplayed', 'settings_agreedtocookie' );
 	private static $ignore_request_keys = array( 'utm_source', 'utm_medium', 'utm_term', 'utm_content', 'utm_campaign' );
 	private static $whitelist_cookies = null;
-	private static $bail_callback = false;
+	private static $bail_callback = 'do_not_cache';
 	private static $debug = false;
 	private static $gzip = true;
 
@@ -87,6 +126,8 @@ class Redis_Page_Cache {
 		if ( self::$debug ) {
 			self::$debug_data = array( 'request_hash' => $request_hash );
 		}
+    
+    write_log( $request_hash );
 
 		// Convert to an actual hash.
 		self::$request_hash = md5( serialize( $request_hash ) );
@@ -493,14 +534,17 @@ class Redis_Page_Cache {
 			$redis = $redis->multi();
 
 			if ( $cache ) {
+  			
+  			  write_log('cache: ' . sprintf( 'pjc-%s', self::$request_hash ) );
+  			
 				// Okay to cache.
 				$redis->set( sprintf( 'pjc-%s', self::$request_hash ), $data );
 			} else {
 				// Not okay, so delete any stale entry.
-				$redis->delete( sprintf( 'pjc-%s', self::$request_hash ) );
+				$redis->del( sprintf( 'pjc-%s', self::$request_hash ) );
 			}
 
-			$redis->delete( sprintf( 'pjc-%s-lock', self::$request_hash ) );
+			$redis->del( sprintf( 'pjc-%s-lock', self::$request_hash ) );
 			$redis->exec();
 		}
 
