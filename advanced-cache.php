@@ -29,8 +29,8 @@ if( empty( $_COOKIE['country'] )) {
 }
 	if (!function_exists('do_not_cache')) {  
 	    function do_not_cache ()  {
-          if( strpos( $_SERVER['REQUEST_URI'], '/checkout' ) === 0 ||
-          	  strpos( $_SERVER['REQUEST_URI'], '/thank-you' ) === 0 ||
+		if( strpos( $_SERVER['REQUEST_URI'], '/checkout' ) === 0 ||
+          	  strpos( $_SERVER['REQUEST_URI'], '/thank-you' ) === 0
            ) {
             return true;
           }
