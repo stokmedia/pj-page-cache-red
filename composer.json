@@ -1,0 +1,7 @@
+{
+  "name": "stokmedia/pj-page-cache-red",
+  "type": "wordpress-plugin",
+  "require": {
+    "composer/installers": "v1.*"
+  }
+}
